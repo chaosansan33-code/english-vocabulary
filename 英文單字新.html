@@ -1,0 +1,1173 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>English Quest ｜多套單字集＋複習卡＋五連勝闖關</title>
+  <style>
+    :root{
+      --pad:14px; --r:18px; --shadow:0 10px 30px rgba(0,0,0,.08);
+      --bg:#fafafa; --card:#fff; --muted:#666; --line:#eee;
+    }
+    body{ margin:0; font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif; background:var(--bg); color:#111; }
+    .wrap{ max-width:1050px; margin:0 auto; padding:16px; }
+    .top{
+      display:flex; gap:12px; flex-wrap:wrap; align-items:center; justify-content:space-between;
+      background:var(--card); padding:var(--pad); border-radius:var(--r); box-shadow:var(--shadow);
+    }
+    h1{ margin:0; font-size:18px; }
+    .sub{ font-size:12px; color:#555; margin-top:4px; line-height:1.4; }
+    .stats{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .pill{ background:#f1f3f5; padding:8px 10px; border-radius:999px; font-size:13px; }
+    .pill b{ font-variant-numeric:tabular-nums; }
+    button{
+      appearance:none; border:0; cursor:pointer;
+      padding:12px 14px; border-radius:14px;
+      background:#111; color:#fff; font-size:14px;
+    }
+    button.secondary{ background:#e9ecef; color:#111; }
+    button.good{ background:#0b7285; }
+    button.warn{ background:#b42318; }
+    button:disabled{ opacity:.5; cursor:not-allowed; }
+    .grid{ display:grid; grid-template-columns: 1.35fr .65fr; gap:14px; margin-top:14px; }
+    @media (max-width:980px){ .grid{ grid-template-columns:1fr; } }
+    .card{ background:var(--card); padding:var(--pad); border-radius:var(--r); box-shadow:var(--shadow); }
+    .card h2{ margin:0 0 10px; font-size:16px; }
+    .bar{ height:10px; background:#f1f3f5; border-radius:999px; overflow:hidden; }
+    .bar > div{ height:100%; width:0%; background:#111; transition:width .25s ease; }
+    .msg{
+      margin-top:10px; padding:10px 12px; border-radius:14px; background:#f8f9fa;
+      border:1px solid #eee; font-size:14px;
+    }
+    .msg.good{ background:#e6fcf5; border-color:#c3fae8; }
+    .msg.warn{ background:#fff5f5; border-color:#ffe3e3; }
+    .mini{ font-size:12px; color:#666; line-height:1.4; }
+
+    /* top set switch */
+    select{
+      padding:10px 12px; border-radius:14px; border:1px solid #e9ecef;
+      background:#fff; font-size:14px;
+    }
+    input, textarea{
+      width:100%; padding:12px; border-radius:14px;
+      border:1px solid #e9ecef; font-size:14px; outline:none;
+    }
+    .divider{ height:1px; background:var(--line); margin:12px 0; }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+
+    /* Tabs */
+    .tabs{ display:flex; gap:10px; flex-wrap:wrap; }
+    .tabBtn{ background:#e9ecef; color:#111; }
+    .tabBtn.active{ background:#111; color:#fff; }
+
+    /* Flashcard */
+    .flashWrap{ display:flex; flex-direction:column; gap:10px; }
+    .flashCard{
+      user-select:none;
+      display:flex; align-items:center; justify-content:center;
+      height:220px; border-radius:22px;
+      background:#f6f7f9; border:2px solid transparent;
+      font-size:40px; letter-spacing:.5px;
+      position:relative;
+      text-align:center;
+      padding:14px;
+    }
+    .cornerTag{
+      position:absolute; top:10px; left:10px;
+      font-size:12px; color:#444; background:#fff;
+      padding:6px 10px; border-radius:999px; border:1px solid var(--line);
+    }
+    .cornerStreak{
+      position:absolute; top:10px; right:10px;
+      font-size:12px; color:#444; background:#fff;
+      padding:6px 10px; border-radius:999px; border:1px solid var(--line);
+    }
+
+    /* Quiz */
+    .promptBig{ font-size:34px; margin:6px 0 8px; }
+    .choices{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px; }
+    @media (max-width:520px){ .choices{ grid-template-columns:1fr; } }
+    .choice{
+      text-align:left; background:#f6f7f9; color:#111;
+      border:2px solid transparent;
+      padding:14px; border-radius:16px;
+    }
+    .choice strong{ display:block; font-size:16px; margin-bottom:4px; }
+    .choice small{ color:#666; }
+    .choice.correct{ border-color:#2f9e44; background:#ebfbee; }
+    .choice.wrong{ border-color:#e03131; background:#fff5f5; }
+
+    /* Spelling */
+    .spellBox{
+      display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:10px;
+    }
+    .wordSlots{
+      display:flex; gap:6px; flex-wrap:wrap;
+      padding:10px 12px; background:#f8f9fa; border:1px solid var(--line);
+      border-radius:14px; min-height:44px; align-items:center;
+      font-size:18px;
+    }
+    .slot{
+      width:18px; height:26px;
+      border-bottom:2px solid #bbb;
+      display:inline-flex; align-items:flex-end; justify-content:center;
+    }
+    .letters{
+      display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;
+    }
+    .letterBtn{
+      background:#e9ecef; color:#111; border-radius:14px; padding:10px 12px; border:0; cursor:pointer;
+      font-size:16px;
+    }
+
+    /* Teacher list */
+    .list{ display:flex; flex-direction:column; gap:8px; max-height:260px; overflow:auto; }
+    .wordItem{ display:flex; justify-content:space-between; gap:10px; align-items:center; padding:10px 12px; background:#f8f9fa; border-radius:14px; }
+    .wordItem .w{ display:flex; flex-direction:column; }
+    .wordItem .w b{ font-size:14px; }
+    .wordItem .w span{ font-size:12px; color:#666; }
+    .danger{ background:#ffe3e3; color:#c92a2a; }
+
+    .badge{
+      background:#f1f3f5; padding:6px 10px; border-radius:999px; font-size:12px;
+      border:1px solid #e9ecef;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div style="min-width:280px">
+        <h1>🎮 English Quest ｜多套單字集（篇章）＋複習卡 → 五連勝闖關</h1>
+        <div class="sub">
+          先單字卡翻面＋聽音複習，再進遊玩檢驗：每個單字要「連續答對 5 次」才算完成；答錯該字歸零但與其他字交叉出現。
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="row">
+          <span class="badge">目前單字集：</span>
+          <select id="setSelect"></select>
+          <button class="secondary" id="btnRenameSet">✏️ 改名</button>
+        </div>
+        <div class="pill">階段 <b id="phaseLabel">複習</b></div>
+        <div class="pill">完成 <b id="masteredCount">0</b>/<b id="totalCount">0</b></div>
+        <button class="secondary" id="toggleTeacher">老師模式</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- Main -->
+      <div class="card">
+        <div class="tabs">
+          <button class="tabBtn active" id="tabReview">🃏 單字複習</button>
+          <button class="tabBtn" id="tabPlay">🕹️ 遊玩檢驗</button>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- REVIEW -->
+        <div id="reviewView">
+          <h2>單字複習（點卡片翻面｜🔊 可重播）</h2>
+          <div class="flashWrap">
+            <div class="flashCard" id="flashCard" title="點我翻面">
+              <div class="cornerTag" id="flashSide">EN</div>
+              <div class="cornerStreak" id="flashProgress">0/5</div>
+              <div id="flashText">jump</div>
+            </div>
+            <div class="row">
+              <button class="secondary" id="btnSpeakCard">🔊 播放</button>
+              <button class="secondary" id="btnPrevCard">⬅ 上一張</button>
+              <button class="secondary" id="btnNextCard">下一張 ➡</button>
+              <button class="good" id="btnStartPlay">開始檢驗 🕹️</button>
+            </div>
+            <div class="mini">
+              小技巧：「聽 → 跟唸 → 翻中文確認」再下一張。加油寶！你做得到！
+            </div>
+          </div>
+        </div>
+
+        <!-- PLAY -->
+        <div id="playView" style="display:none">
+          <div class="row" style="justify-content:space-between">
+            <h2 style="margin:0">遊玩檢驗（交叉出題｜每字五連勝）</h2>
+            <div class="row">
+              <label class="mini">模式：</label>
+              <select id="modeSelect">
+                <option value="listen_zh_mc">① 聽力：聽英選中文</option>
+                <option value="listen_en_mc">② 聽力：聽英選英文</option>
+                <option value="zh_to_en">③ 看中文選英文</option>
+                <option value="en_to_zh">④ 看英文選中文</option>
+                <option value="listen_spell">⑤ 聽力：聽英拼單字</option>
+                <option value="mixed" selected>⑥ 混合出題（推薦）</option>
+              </select>
+              <button class="secondary" id="btnReplay">🔊 重播</button>
+              <button class="secondary" id="btnBackToReview">回複習 🃏</button>
+            </div>
+          </div>
+
+          <div class="bar" style="margin-top:10px"><div id="progressBar"></div></div>
+
+          <!-- Multiple choice prompt -->
+          <div id="mcBlock">
+            <div class="promptBig" id="promptText">（題目）</div>
+            <div class="mini" id="promptHint">提示：按「重播」可再聽一次。</div>
+            <div class="choices" id="choices"></div>
+          </div>
+
+          <!-- Spelling prompt -->
+          <div id="spellBlock" style="display:none">
+            <div class="promptBig" id="spellTitle">聽音拼單字</div>
+            <div class="mini">按「重播」聽音 → 點下面字母拼出單字（不用鍵盤）</div>
+
+            <div class="spellBox">
+              <div class="wordSlots" id="slots"></div>
+              <button class="secondary" id="btnBackspace">⌫ 刪除</button>
+              <button class="good" id="btnSubmitSpell">送出</button>
+              <button class="secondary" id="btnClearSpell">清空</button>
+            </div>
+            <div class="letters" id="letters"></div>
+          </div>
+
+          <div class="msg" id="message" style="display:none"></div>
+          <div class="mini" style="margin-top:10px">
+            ✅ 結束條件：每個單字「連勝 5 次」完成。<br>
+            ❌ 若該字答錯：該字連勝歸零，但會與其他單字交叉出現直到再次連勝 5 次。
+          </div>
+        </div>
+      </div>
+
+      <!-- Teacher -->
+      <div class="card" id="teacherCard" style="display:none">
+        <h2>🧑‍🏫 老師模式（篇章管理＋批次輸入：逐行配對）</h2>
+        <div class="mini">
+          你可以新增「顏色篇 / 動作篇 / 物品篇…」，每篇都有自己的單字庫與闖關進度，關掉也會保留。
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="row">
+          <button id="btnNewSet">➕ 新增一篇</button>
+          <button class="secondary" id="btnDuplicateSet">📄 複製目前這篇</button>
+          <button class="secondary danger" id="btnDeleteSet">🗑️ 刪除目前這篇</button>
+          <button class="secondary" id="btnResetProgress">🔄 重置本篇進度</button>
+        </div>
+
+        <div class="divider"></div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+          <div>
+            <div class="mini">英文（每行一個）</div>
+            <textarea id="bulkEn" rows="10" placeholder="jump&#10;run&#10;book"></textarea>
+          </div>
+          <div>
+            <div class="mini">中文（每行一個）</div>
+            <textarea id="bulkZh" rows="10" placeholder="跳&#10;跑&#10;書"></textarea>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <button id="applyBulk">✅ 套用到本篇單字庫</button>
+          <button class="secondary" id="resetDefault">↩ 恢復預設（覆蓋本篇）</button>
+          <button class="secondary" id="exportAll">⬇ 匯出全部篇章</button>
+          <button class="secondary" id="importAll">⬆ 匯入全部篇章</button>
+        </div>
+
+        <div class="divider"></div>
+        <div class="mini">本篇目前單字（刪除只影響本篇）</div>
+        <div class="list" id="wordList"></div>
+
+        <textarea id="ioBox" rows="7" style="margin-top:10px" placeholder="匯入/匯出用：這裡會出現 JSON（包含全部篇章）"></textarea>
+        <div class="mini">匯出可複製到另一台平板匯入（離線也可以）。</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  // =================== Storage schema ===================
+  // EQV4_DATA = { activeSetId, sets: { setId: { name, words:[{en,zh}] } } }
+  // EQV4_PROGRESS = { setId: { en: streak0to5 } }
+  // EQV4_STATE = { phase, reviewIndex, mode }
+  const KEY_DATA = "eqv4.data";
+  const KEY_PROGRESS = "eqv4.progress";
+  const KEY_STATE = "eqv4.state";
+
+  const DEFAULT_WORDS = [
+    { en:"jump", zh:"跳" }, { en:"run", zh:"跑" }, { en:"sit", zh:"坐下" }, { en:"stand", zh:"站起來" },
+    { en:"book", zh:"書" }, { en:"pen", zh:"筆" }, { en:"door", zh:"門" }, { en:"chair", zh:"椅子" },
+    { en:"red", zh:"紅色" }, { en:"blue", zh:"藍色" }, { en:"big", zh:"大" }, { en:"small", zh:"小" },
+    { en:"open", zh:"打開" }, { en:"close", zh:"關上" }, { en:"touch", zh:"碰一下" }, { en:"look", zh:"看" },
+  ];
+
+  function uid(){
+    return "s_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16);
+  }
+
+  function sanitizeWords(arr){
+    const cleaned = [];
+    const seen = new Set();
+    for(const x of arr || []){
+      if(!x || !x.en || !x.zh) continue;
+      const en = String(x.en).trim().toLowerCase();
+      const zh = String(x.zh).trim();
+      if(!en || !zh) continue;
+      if(seen.has(en)) continue;
+      seen.add(en);
+      cleaned.push({ en, zh });
+    }
+    return cleaned;
+  }
+
+  function loadData(){
+    try{
+      const raw = localStorage.getItem(KEY_DATA);
+      if(!raw){
+        const id = uid();
+        const data = {
+          activeSetId: id,
+          sets: {
+            [id]: { name: "預設篇", words: [...DEFAULT_WORDS] }
+          }
+        };
+        localStorage.setItem(KEY_DATA, JSON.stringify(data));
+        return data;
+      }
+      const data = JSON.parse(raw);
+      if(!data?.sets || !data.activeSetId || !data.sets[data.activeSetId]){
+        // repair
+        const id = uid();
+        const fixed = { activeSetId: id, sets: { [id]: { name:"預設篇", words:[...DEFAULT_WORDS] } } };
+        localStorage.setItem(KEY_DATA, JSON.stringify(fixed));
+        return fixed;
+      }
+      // sanitize each set's words
+      for(const sid of Object.keys(data.sets)){
+        const s = data.sets[sid];
+        if(!s?.name) s.name = "未命名篇";
+        s.words = sanitizeWords(s.words);
+      }
+      localStorage.setItem(KEY_DATA, JSON.stringify(data));
+      return data;
+    } catch {
+      const id = uid();
+      const data = { activeSetId: id, sets: { [id]: { name:"預設篇", words:[...DEFAULT_WORDS] } } };
+      localStorage.setItem(KEY_DATA, JSON.stringify(data));
+      return data;
+    }
+  }
+
+  function saveData(data){
+    localStorage.setItem(KEY_DATA, JSON.stringify(data));
+  }
+
+  function loadProgress(){
+    try{
+      const raw = localStorage.getItem(KEY_PROGRESS);
+      if(!raw) return {};
+      const p = JSON.parse(raw);
+      return (p && typeof p === "object") ? p : {};
+    } catch { return {}; }
+  }
+  function saveProgress(p){
+    localStorage.setItem(KEY_PROGRESS, JSON.stringify(p));
+  }
+
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(KEY_STATE);
+      if(!raw) return { phase:"review", reviewIndex:0, mode:"mixed" };
+      const s = JSON.parse(raw);
+      return { phase:"review", reviewIndex:0, mode:"mixed", ...s };
+    } catch { return { phase:"review", reviewIndex:0, mode:"mixed" }; }
+  }
+  function saveState(s){ localStorage.setItem(KEY_STATE, JSON.stringify(s)); }
+
+  // =================== TTS ===================
+  function speakEN(text){
+    try{
+      if(!("speechSynthesis" in window)) return;
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = "en-US";
+      u.rate = 0.9;
+      u.pitch = 1.0;
+      u.volume = 1.0;
+      window.speechSynthesis.speak(u);
+    } catch {}
+  }
+
+  // =================== Helpers ===================
+  const $ = (id) => document.getElementById(id);
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, (c)=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  }
+  function shuffle(arr){
+    const a = [...arr];
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [a[i],a[j]]=[a[j],a[i]];
+    }
+    return a;
+  }
+  function clamp(n,a,b){ return Math.max(a, Math.min(b,n)); }
+  function pickOthers(all, correct, n){
+    const pool = all.filter(x => x !== correct);
+    const picked = [];
+    while(picked.length < n && pool.length){
+      const idx = Math.floor(Math.random()*pool.length);
+      picked.push(pool[idx]);
+      pool.splice(idx,1);
+    }
+    while(picked.length < n) picked.push("（空）");
+    return picked;
+  }
+
+  // =================== UI refs ===================
+  const setSelect = $("setSelect");
+  const btnRenameSet = $("btnRenameSet");
+
+  const phaseLabel = $("phaseLabel");
+  const masteredCount = $("masteredCount");
+  const totalCount = $("totalCount");
+
+  const tabReview = $("tabReview");
+  const tabPlay = $("tabPlay");
+  const reviewView = $("reviewView");
+  const playView = $("playView");
+
+  const flashCard = $("flashCard");
+  const flashText = $("flashText");
+  const flashSide = $("flashSide");
+  const flashProgress = $("flashProgress");
+  const btnSpeakCard = $("btnSpeakCard");
+  const btnPrevCard = $("btnPrevCard");
+  const btnNextCard = $("btnNextCard");
+  const btnStartPlay = $("btnStartPlay");
+
+  const modeSelect = $("modeSelect");
+  const btnReplay = $("btnReplay");
+  const btnBackToReview = $("btnBackToReview");
+  const progressBar = $("progressBar");
+  const message = $("message");
+
+  const mcBlock = $("mcBlock");
+  const promptText = $("promptText");
+  const promptHint = $("promptHint");
+  const choicesEl = $("choices");
+
+  const spellBlock = $("spellBlock");
+  const slotsEl = $("slots");
+  const lettersEl = $("letters");
+  const btnBackspace = $("btnBackspace");
+  const btnSubmitSpell = $("btnSubmitSpell");
+  const btnClearSpell = $("btnClearSpell");
+
+  // teacher
+  const teacherCard = $("teacherCard");
+  const toggleTeacher = $("toggleTeacher");
+  const btnNewSet = $("btnNewSet");
+  const btnDuplicateSet = $("btnDuplicateSet");
+  const btnDeleteSet = $("btnDeleteSet");
+  const btnResetProgress = $("btnResetProgress");
+  const bulkEn = $("bulkEn");
+  const bulkZh = $("bulkZh");
+  const applyBulk = $("applyBulk");
+  const resetDefault = $("resetDefault");
+  const exportAll = $("exportAll");
+  const importAll = $("importAll");
+  const ioBox = $("ioBox");
+  const wordList = $("wordList");
+
+  // =================== Runtime state ===================
+  let data = loadData();
+  let progressAll = loadProgress();
+  let state = loadState();
+
+  function getActiveSet(){
+    return data.sets[data.activeSetId];
+  }
+  function getActiveWords(){
+    return getActiveSet().words || [];
+  }
+
+  function ensureProgressForActiveSet(){
+    const sid = data.activeSetId;
+    progressAll[sid] = progressAll[sid] || {};
+    const map = progressAll[sid];
+
+    // add missing words
+    for(const w of getActiveWords()){
+      if(typeof map[w.en] !== "number") map[w.en] = 0;
+    }
+    // remove deleted words
+    for(const en of Object.keys(map)){
+      if(!getActiveWords().find(w => w.en === en)) delete map[en];
+    }
+    saveProgress(progressAll);
+  }
+
+  function setActiveSetId(sid){
+    if(!data.sets[sid]) return;
+    data.activeSetId = sid;
+    saveData(data);
+    ensureProgressForActiveSet();
+    // reset review index to safe range
+    state.reviewIndex = 0;
+    saveState(state);
+    // refresh UI views
+    fillSetSelect();
+    renderWordList();
+    renderTeacherBulk();
+    setPhase(state.phase || "review");
+  }
+
+  function fillSetSelect(){
+    setSelect.innerHTML = "";
+    const entries = Object.entries(data.sets);
+    // stable ordering: active first then name
+    entries.sort((a,b) => {
+      const [ida,sa] = a; const [idb,sb] = b;
+      if(ida === data.activeSetId) return -1;
+      if(idb === data.activeSetId) return 1;
+      return String(sa.name).localeCompare(String(sb.name));
+    });
+
+    for(const [sid, s] of entries){
+      const opt = document.createElement("option");
+      opt.value = sid;
+      opt.textContent = s.name || "未命名篇";
+      setSelect.appendChild(opt);
+    }
+    setSelect.value = data.activeSetId;
+  }
+
+  // =================== Messaging ===================
+  function showMsg(text, kind){
+    message.style.display = "block";
+    message.textContent = text;
+    message.className = "msg" + (kind ? (" " + kind) : "");
+  }
+  function hideMsg(){
+    message.style.display = "none";
+    message.textContent = "";
+    message.className = "msg";
+  }
+
+  // =================== Mastery UI ===================
+  function getStreak(en){
+    const sid = data.activeSetId;
+    return progressAll?.[sid]?.[en] ?? 0;
+  }
+  function setStreak(en, val){
+    const sid = data.activeSetId;
+    progressAll[sid] = progressAll[sid] || {};
+    progressAll[sid][en] = clamp(val, 0, 5);
+    saveProgress(progressAll);
+  }
+  function updateMasteryUI(){
+    const words = getActiveWords();
+    const sid = data.activeSetId;
+    const map = progressAll[sid] || {};
+    const mastered = words.filter(w => (map[w.en] ?? 0) >= 5).length;
+    masteredCount.textContent = mastered;
+    totalCount.textContent = words.length;
+    const pct = words.length ? Math.round((mastered/words.length)*100) : 0;
+    progressBar.style.width = pct + "%";
+  }
+
+  // =================== Tabs / Phase ===================
+  let reviewSide = "EN";
+  function setPhase(phase){
+    state.phase = phase;
+    saveState(state);
+
+    if(phase === "review"){
+      phaseLabel.textContent = "複習";
+      tabReview.classList.add("active");
+      tabPlay.classList.remove("active");
+      reviewView.style.display = "";
+      playView.style.display = "none";
+      renderReview();
+    } else {
+      phaseLabel.textContent = "檢驗";
+      tabPlay.classList.add("active");
+      tabReview.classList.remove("active");
+      reviewView.style.display = "none";
+      playView.style.display = "";
+      renderQuestion(true);
+    }
+  }
+
+  tabReview.addEventListener("click", () => setPhase("review"));
+  tabPlay.addEventListener("click", () => setPhase("play"));
+  btnBackToReview.addEventListener("click", () => setPhase("review"));
+
+  // =================== Review (Flashcards) ===================
+  function renderReview(){
+    ensureProgressForActiveSet();
+    const words = getActiveWords();
+    if(!words.length){
+      flashText.textContent = "（本篇沒有單字）";
+      flashSide.textContent = "EN";
+      flashProgress.textContent = "0/5";
+      return;
+    }
+    let idx = clamp(state.reviewIndex ?? 0, 0, words.length-1);
+    state.reviewIndex = idx;
+    saveState(state);
+
+    const w = words[idx];
+    const streak = getStreak(w.en);
+
+    flashProgress.textContent = `${clamp(streak,0,5)}/5`;
+    flashSide.textContent = reviewSide;
+    flashText.textContent = (reviewSide === "EN") ? w.en : w.zh;
+
+    if(reviewSide === "EN") speakEN(w.en);
+    updateMasteryUI();
+  }
+
+  function flipCard(){
+    reviewSide = (reviewSide === "EN") ? "ZH" : "EN";
+    renderReview();
+  }
+  flashCard.addEventListener("click", flipCard);
+
+  btnSpeakCard.addEventListener("click", () => {
+    const words = getActiveWords();
+    if(!words.length) return;
+    const w = words[clamp(state.reviewIndex ?? 0, 0, words.length-1)];
+    speakEN(w.en);
+  });
+
+  btnPrevCard.addEventListener("click", () => {
+    const words = getActiveWords();
+    if(!words.length) return;
+    reviewSide = "EN";
+    state.reviewIndex = clamp((state.reviewIndex ?? 0) - 1, 0, words.length-1);
+    saveState(state);
+    renderReview();
+  });
+
+  btnNextCard.addEventListener("click", () => {
+    const words = getActiveWords();
+    if(!words.length) return;
+    reviewSide = "EN";
+    state.reviewIndex = clamp((state.reviewIndex ?? 0) + 1, 0, words.length-1);
+    saveState(state);
+    renderReview();
+  });
+
+  btnStartPlay.addEventListener("click", () => {
+    reviewSide = "EN";
+    setPhase("play");
+  });
+
+  // =================== Play logic: interleaving picker ===================
+  let currentWord = null;
+  let lastEn = null;
+
+  function unfinishedWords(){
+    const words = getActiveWords();
+    return words.filter(w => getStreak(w.en) < 5);
+  }
+
+  function pickNextWord(){
+    const pool = unfinishedWords();
+    if(!pool.length) return null;
+
+    const candidates = pool.filter(w => w.en !== lastEn);
+    const usePool = candidates.length ? candidates : pool;
+
+    // weight: (5 - streak)^2 + 1  => streak小更常出
+    const weights = usePool.map(w => {
+      const s = getStreak(w.en);
+      const base = (5 - s);
+      return (base*base) + 1;
+    });
+
+    const sum = weights.reduce((a,b)=>a+b,0);
+    let r = Math.random() * sum;
+    for(let i=0;i<usePool.length;i++){
+      r -= weights[i];
+      if(r <= 0) return usePool[i];
+    }
+    return usePool[usePool.length-1];
+  }
+
+  // =================== Modes ===================
+  const MODES = ["listen_zh_mc","listen_en_mc","zh_to_en","en_to_zh","listen_spell"];
+
+  function getActiveMode(){
+    const val = modeSelect.value;
+    if(val === "mixed"){
+      return MODES[Math.floor(Math.random()*MODES.length)];
+    }
+    return val;
+  }
+
+  modeSelect.value = state.mode || "mixed";
+  modeSelect.addEventListener("change", () => {
+    state.mode = modeSelect.value;
+    saveState(state);
+    renderQuestion(true);
+  });
+
+  btnReplay.addEventListener("click", () => {
+    if(!currentWord) return;
+    speakEN(currentWord.en);
+  });
+
+  // =================== Render MC ===================
+  function renderMCQuestion(mode, w){
+    mcBlock.style.display = "";
+    spellBlock.style.display = "none";
+    hideMsg();
+
+    const words = getActiveWords();
+
+    if(mode === "listen_zh_mc"){
+      promptText.textContent = "🎧 聽力題：聽英選中文";
+      promptHint.textContent = "按「重播」再聽一次。";
+      speakEN(w.en);
+
+      const correct = w.zh;
+      const others = pickOthers(words.map(x=>x.zh), correct, 3);
+      const opts = shuffle([correct, ...others]).map(x => ({ label:x, value:x, correct: x===correct }));
+      renderChoices(opts, picked => picked === correct);
+      return;
+    }
+
+    if(mode === "listen_en_mc"){
+      promptText.textContent = "🎧 聽力題：聽英選英文";
+      promptHint.textContent = "按「重播」再聽一次。";
+      speakEN(w.en);
+
+      const correct = w.en;
+      const others = pickOthers(words.map(x=>x.en), correct, 3);
+      const opts = shuffle([correct, ...others]).map(x => ({ label:x, value:x, correct: x===correct }));
+      renderChoices(opts, picked => picked === correct);
+      return;
+    }
+
+    if(mode === "zh_to_en"){
+      promptText.textContent = w.zh;
+      promptHint.textContent = "看中文選英文（可按重播聽發音）。";
+      const correct = w.en;
+      const others = pickOthers(words.map(x=>x.en), correct, 3);
+      const opts = shuffle([correct, ...others]).map(x => ({ label:x, value:x, correct: x===correct }));
+      renderChoices(opts, picked => picked === correct);
+      return;
+    }
+
+    if(mode === "en_to_zh"){
+      promptText.textContent = w.en;
+      promptHint.textContent = "看英文選中文（可按重播聽發音）。";
+      speakEN(w.en);
+      const correct = w.zh;
+      const others = pickOthers(words.map(x=>x.zh), correct, 3);
+      const opts = shuffle([correct, ...others]).map(x => ({ label:x, value:x, correct: x===correct }));
+      renderChoices(opts, picked => picked === correct);
+      return;
+    }
+  }
+
+  function renderChoices(opts, checker){
+    choicesEl.innerHTML = "";
+    opts.forEach((c, idx) => {
+      const btn = document.createElement("button");
+      btn.className = "choice";
+      btn.innerHTML = `<strong>${escapeHtml(c.label)}</strong><small>點一下選擇</small>`;
+      btn.addEventListener("click", () => {
+        const isCorrect = checker(c.value);
+        const correctIdx = opts.findIndex(x => x.correct);
+
+        [...choicesEl.children].forEach((el, i) => {
+          el.classList.remove("correct","wrong");
+          if(i === correctIdx) el.classList.add("correct");
+          if(i === idx && idx !== correctIdx) el.classList.add("wrong");
+        });
+
+        handleAnswer(isCorrect);
+      });
+      choicesEl.appendChild(btn);
+    });
+  }
+
+  // =================== Spelling ===================
+  let spellTarget = "";
+  let spellBuilt = "";
+  let spellLetters = [];
+
+  function renderSpellingQuestion(w){
+    mcBlock.style.display = "none";
+    spellBlock.style.display = "";
+    hideMsg();
+
+    speakEN(w.en);
+    spellTarget = w.en.toLowerCase();
+    spellBuilt = "";
+
+    const letters = spellTarget.split("");
+    const distractPool = "abcdefghijklmnopqrstuvwxyz".split("").filter(ch => !letters.includes(ch));
+    const distract = shuffle(distractPool).slice(0, Math.min(3, distractPool.length));
+    spellLetters = shuffle([...letters, ...distract]);
+
+    renderSlots();
+    renderLetterButtons();
+  }
+
+  function renderSlots(){
+    slotsEl.innerHTML = "";
+    for(let i=0;i<spellTarget.length;i++){
+      const d = document.createElement("div");
+      d.className = "slot";
+      d.textContent = spellBuilt[i] ? spellBuilt[i] : "";
+      slotsEl.appendChild(d);
+    }
+  }
+
+  function renderLetterButtons(){
+    lettersEl.innerHTML = "";
+    spellLetters.forEach((ch) => {
+      const b = document.createElement("button");
+      b.className = "letterBtn";
+      b.textContent = ch;
+      b.addEventListener("click", () => {
+        if(spellBuilt.length >= spellTarget.length) return;
+        spellBuilt += ch;
+        renderSlots();
+      });
+      lettersEl.appendChild(b);
+    });
+  }
+
+  btnBackspace.addEventListener("click", () => {
+    spellBuilt = spellBuilt.slice(0, -1);
+    renderSlots();
+  });
+  btnClearSpell.addEventListener("click", () => {
+    spellBuilt = "";
+    renderSlots();
+  });
+  btnSubmitSpell.addEventListener("click", () => {
+    const isCorrect = (spellBuilt.toLowerCase() === spellTarget);
+    if(isCorrect){
+      showMsg("✅ 拼對了！", "good");
+    } else {
+      showMsg(`🧩 卡關了：正確是「${spellTarget}」（先記住再下一題）`, "warn");
+    }
+    handleAnswer(isCorrect, true);
+  });
+
+  // =================== Answer handling: per-word consecutive correct ===================
+  function handleAnswer(isCorrect, delay=false){
+    if(!currentWord) return;
+    const en = currentWord.en;
+    const s = getStreak(en);
+
+    if(isCorrect){
+      setStreak(en, s + 1);
+      const ns = getStreak(en);
+      showMsg(`✅ 過關！「${en}」連勝：${ns}/5`, "good");
+    } else {
+      setStreak(en, 0);
+      showMsg(`🛡️ 卡關：沒關係！「${en}」連勝歸零，之後會交叉再出現直到連勝 5 次`, "warn");
+    }
+
+    updateMasteryUI();
+
+    const done = unfinishedWords().length === 0;
+    if(done){
+      setTimeout(() => {
+        mcBlock.style.display = "";
+        spellBlock.style.display = "none";
+        choicesEl.innerHTML = "";
+        promptText.textContent = "🎉 本篇完成！每個單字都連勝 5 次了";
+        promptHint.textContent = "你可以換篇章、回複習，或老師模式新增新篇章。";
+        showMsg("超強！今天任務完成 ✅", "good");
+      }, delay ? 650 : 500);
+      return;
+    }
+
+    setTimeout(() => renderQuestion(false), delay ? 900 : 650);
+  }
+
+  // =================== Render question ===================
+  function renderQuestion(resetLast){
+    ensureProgressForActiveSet();
+    const words = getActiveWords();
+    if(!words.length){
+      promptText.textContent = "（本篇沒有單字，請到老師模式新增）";
+      choicesEl.innerHTML = "";
+      return;
+    }
+    if(resetLast) lastEn = null;
+
+    currentWord = pickNextWord();
+    if(!currentWord){
+      updateMasteryUI();
+      promptText.textContent = "🎉 本篇完成！";
+      return;
+    }
+    lastEn = currentWord.en;
+
+    const mode = getActiveMode();
+    if(mode === "listen_spell"){
+      renderSpellingQuestion(currentWord);
+      return;
+    }
+    renderMCQuestion(mode, currentWord);
+  }
+
+  // =================== Teacher: set management ===================
+  function renderTeacherBulk(){
+    const set = getActiveSet();
+    const words = set.words || [];
+    bulkEn.value = words.map(w => w.en).join("\n");
+    bulkZh.value = words.map(w => w.zh).join("\n");
+  }
+
+  function renderWordList(){
+    wordList.innerHTML = "";
+    const words = getActiveWords();
+    words.forEach((w, idx) => {
+      const div = document.createElement("div");
+      div.className = "wordItem";
+      div.innerHTML = `
+        <div class="w">
+          <b>${escapeHtml(w.en)}</b>
+          <span>${escapeHtml(w.zh)}</span>
+        </div>
+        <button class="secondary danger">刪除</button>
+      `;
+      div.querySelector("button").addEventListener("click", () => {
+        const set = getActiveSet();
+        set.words.splice(idx, 1);
+        set.words = sanitizeWords(set.words);
+        saveData(data);
+
+        // progress cleanup
+        ensureProgressForActiveSet();
+
+        renderWordList();
+        renderTeacherBulk();
+        updateMasteryUI();
+        renderReview();
+      });
+      wordList.appendChild(div);
+    });
+  }
+
+  toggleTeacher.addEventListener("click", () => {
+    const open = teacherCard.style.display !== "none";
+    teacherCard.style.display = open ? "none" : "block";
+    toggleTeacher.textContent = open ? "老師模式" : "關閉老師模式";
+    renderTeacherBulk();
+    renderWordList();
+  });
+
+  btnNewSet.addEventListener("click", () => {
+    const name = prompt("請輸入新篇章名稱（例如：顏色篇）", "新篇章");
+    if(!name) return;
+
+    const id = uid();
+    data.sets[id] = { name: name.trim(), words: [] };
+    saveData(data);
+
+    progressAll[id] = {};
+    saveProgress(progressAll);
+
+    setActiveSetId(id);
+    if(teacherCard.style.display !== "none"){
+      renderTeacherBulk();
+      renderWordList();
+    }
+  });
+
+  btnDuplicateSet.addEventListener("click", () => {
+    const cur = getActiveSet();
+    const name = prompt("複製後的篇章名稱：", (cur.name || "未命名篇") + "（複製）");
+    if(!name) return;
+
+    const id = uid();
+    data.sets[id] = { name: name.trim(), words: sanitizeWords(cur.words) };
+    saveData(data);
+
+    // copy progress as 0 (更直覺：新篇章重新挑戰)
+    progressAll[id] = {};
+    saveProgress(progressAll);
+
+    setActiveSetId(id);
+  });
+
+  btnDeleteSet.addEventListener("click", () => {
+    const keys = Object.keys(data.sets);
+    if(keys.length <= 1){
+      alert("至少要保留一篇，不能刪除最後一篇。");
+      return;
+    }
+    const cur = getActiveSet();
+    const ok = confirm(`確定要刪除「${cur.name}」這一篇嗎？（單字與進度都會移除）`);
+    if(!ok) return;
+
+    const sid = data.activeSetId;
+    delete data.sets[sid];
+    delete progressAll[sid];
+    saveData(data);
+    saveProgress(progressAll);
+
+    // switch to first remaining set
+    const nextId = Object.keys(data.sets)[0];
+    data.activeSetId = nextId;
+    saveData(data);
+    setActiveSetId(nextId);
+  });
+
+  btnResetProgress.addEventListener("click", () => {
+    const cur = getActiveSet();
+    const ok = confirm(`要重置「${cur.name}」的闖關進度嗎？（所有單字連勝歸零）`);
+    if(!ok) return;
+
+    progressAll[data.activeSetId] = {};
+    saveProgress(progressAll);
+    ensureProgressForActiveSet();
+
+    renderReview();
+    updateMasteryUI();
+    if(state.phase === "play") renderQuestion(true);
+    alert("已重置本篇進度。");
+  });
+
+  btnRenameSet.addEventListener("click", () => {
+    const cur = getActiveSet();
+    const name = prompt("請輸入新的篇章名稱：", cur.name || "未命名篇");
+    if(!name) return;
+    cur.name = name.trim();
+    saveData(data);
+    fillSetSelect();
+  });
+
+  applyBulk.addEventListener("click", () => {
+    const ens = bulkEn.value.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+    const zhs = bulkZh.value.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+    const n = Math.min(ens.length, zhs.length);
+
+    const arr = [];
+    for(let i=0;i<n;i++){
+      arr.push({ en: ens[i].toLowerCase(), zh: zhs[i] });
+    }
+
+    const cleaned = sanitizeWords(arr);
+    getActiveSet().words = cleaned;
+    saveData(data);
+
+    // reset progress for this set to avoid mismatch
+    progressAll[data.activeSetId] = {};
+    saveProgress(progressAll);
+    ensureProgressForActiveSet();
+
+    state.reviewIndex = 0;
+    saveState(state);
+    reviewSide = "EN";
+
+    renderTeacherBulk();
+    renderWordList();
+    renderReview();
+    updateMasteryUI();
+    alert("已套用本篇單字庫，並重置本篇闖關進度。");
+  });
+
+  resetDefault.addEventListener("click", () => {
+    const ok = confirm("要用「預設單字」覆蓋本篇嗎？（本篇原本單字會被取代，進度重置）");
+    if(!ok) return;
+
+    getActiveSet().words = sanitizeWords(DEFAULT_WORDS);
+    saveData(data);
+
+    progressAll[data.activeSetId] = {};
+    saveProgress(progressAll);
+    ensureProgressForActiveSet();
+
+    state.reviewIndex = 0;
+    saveState(state);
+    reviewSide = "EN";
+
+    renderTeacherBulk();
+    renderWordList();
+    renderReview();
+    updateMasteryUI();
+  });
+
+  exportAll.addEventListener("click", () => {
+    const payload = {
+      data: loadData(),
+      progress: loadProgress()
+    };
+    ioBox.value = JSON.stringify(payload, null, 2);
+    ioBox.focus();
+    ioBox.select();
+    alert("已匯出（包含全部篇章＋進度）到文字框，可複製到別台匯入。");
+  });
+
+  importAll.addEventListener("click", () => {
+    try{
+      const payload = JSON.parse(ioBox.value);
+      if(!payload?.data?.sets || !payload?.data?.activeSetId) throw new Error("bad");
+      // sanitize sets
+      const sets = payload.data.sets;
+      for(const sid of Object.keys(sets)){
+        sets[sid].name = String(sets[sid].name || "未命名篇");
+        sets[sid].words = sanitizeWords(sets[sid].words);
+      }
+      // ensure active exists
+      if(!sets[payload.data.activeSetId]){
+        payload.data.activeSetId = Object.keys(sets)[0];
+      }
+
+      localStorage.setItem(KEY_DATA, JSON.stringify(payload.data));
+      localStorage.setItem(KEY_PROGRESS, JSON.stringify(payload.progress || {}));
+
+      data = loadData();
+      progressAll = loadProgress();
+      ensureProgressForActiveSet();
+
+      fillSetSelect();
+      renderTeacherBulk();
+      renderWordList();
+      setPhase(state.phase || "review");
+      alert("匯入成功！已載入全部篇章與進度。");
+    } catch {
+      alert("匯入失敗：請確認貼上的是「匯出全部篇章」產生的 JSON。");
+    }
+  });
+
+  // =================== Set selector ===================
+  setSelect.addEventListener("change", () => {
+    const sid = setSelect.value;
+    setActiveSetId(sid);
+  });
+
+  // =================== Init ===================
+  fillSetSelect();
+  ensureProgressForActiveSet();
+  updateMasteryUI();
+
+  // restore phase
+  if(state.phase === "play"){
+    setPhase("play");
+  } else {
+    setPhase("review");
+  }
+
+  // keep mode
+  modeSelect.value = state.mode || "mixed";
+
+  // Ensure teacher UI reflects
+  renderTeacherBulk();
+  renderWordList();
+})();
+</script>
+</body>
+</html>
