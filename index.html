@@ -43,7 +43,6 @@
     .msg.warn{ background:#fff5f5; border-color:#ffe3e3; }
     .mini{ font-size:12px; color:#666; line-height:1.4; }
 
-    /* top set switch */
     select{
       padding:10px 12px; border-radius:14px; border:1px solid #e9ecef;
       background:#fff; font-size:14px;
@@ -55,12 +54,10 @@
     .divider{ height:1px; background:var(--line); margin:12px 0; }
     .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
 
-    /* Tabs */
     .tabs{ display:flex; gap:10px; flex-wrap:wrap; }
     .tabBtn{ background:#e9ecef; color:#111; }
     .tabBtn.active{ background:#111; color:#fff; }
 
-    /* Flashcard */
     .flashWrap{ display:flex; flex-direction:column; gap:10px; }
     .flashCard{
       user-select:none;
@@ -71,6 +68,8 @@
       position:relative;
       text-align:center;
       padding:14px;
+      /* ✅ 如果你有大小寫混合，這行可以讓字看起來更自然 */
+      text-transform:none;
     }
     .cornerTag{
       position:absolute; top:10px; left:10px;
@@ -83,7 +82,6 @@
       padding:6px 10px; border-radius:999px; border:1px solid var(--line);
     }
 
-    /* Quiz */
     .promptBig{ font-size:34px; margin:6px 0 8px; }
     .choices{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px; }
     @media (max-width:520px){ .choices{ grid-template-columns:1fr; } }
@@ -97,7 +95,6 @@
     .choice.correct{ border-color:#2f9e44; background:#ebfbee; }
     .choice.wrong{ border-color:#e03131; background:#fff5f5; }
 
-    /* Spelling */
     .spellBox{
       display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:10px;
     }
@@ -120,7 +117,6 @@
       font-size:16px;
     }
 
-    /* Teacher list */
     .list{ display:flex; flex-direction:column; gap:8px; max-height:260px; overflow:auto; }
     .wordItem{ display:flex; justify-content:space-between; gap:10px; align-items:center; padding:10px 12px; background:#f8f9fa; border-radius:14px; }
     .wordItem .w{ display:flex; flex-direction:column; }
@@ -258,17 +254,17 @@
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
           <div>
             <div class="mini">英文（每行一個）</div>
-            <textarea id="bulkEn" rows="10" placeholder="jump&#10;run&#10;book"></textarea>
+            <textarea id="bulkEn" rows="10" placeholder="Jump&#10;run&#10;January"></textarea>
           </div>
           <div>
             <div class="mini">中文（每行一個）</div>
-            <textarea id="bulkZh" rows="10" placeholder="跳&#10;跑&#10;書"></textarea>
+            <textarea id="bulkZh" rows="10" placeholder="跳&#10;跑&#10;一月"></textarea>
           </div>
         </div>
 
         <div class="row" style="margin-top:10px">
           <button id="applyBulk">✅ 套用到本篇單字庫</button>
-          <button class="secondary" id="resetDefault">↩ 恢復預設（覆蓋本篇）</button>
+          <button class="secondary" id="resetDefault">↩ 恢復初始篇章（覆蓋全部）</button>
           <button class="secondary" id="exportAll">⬇ 匯出全部篇章</button>
           <button class="secondary" id="importAll">⬆ 匯入全部篇章</button>
         </div>
@@ -286,61 +282,197 @@
 <script>
 (() => {
   // =================== Storage schema ===================
-  // EQV4_DATA = { activeSetId, sets: { setId: { name, words:[{en,zh}] } } }
-  // EQV4_PROGRESS = { setId: { en: streak0to5 } }
-  // EQV4_STATE = { phase, reviewIndex, mode }
+  // KEY_DATA: { activeSetId, sets: { setId: { name, words:[{en,zh}] } } }
+  // KEY_PROGRESS: { setId: { enKeyLower: streak0to5 } }
+  // KEY_STATE: { phase, reviewIndex, mode }
   const KEY_DATA = "eqv4.data";
   const KEY_PROGRESS = "eqv4.progress";
   const KEY_STATE = "eqv4.state";
 
-  const DEFAULT_WORDS = [
-    { en:"jump", zh:"跳" }, { en:"run", zh:"跑" }, { en:"sit", zh:"坐下" }, { en:"stand", zh:"站起來" },
-    { en:"book", zh:"書" }, { en:"pen", zh:"筆" }, { en:"door", zh:"門" }, { en:"chair", zh:"椅子" },
-    { en:"red", zh:"紅色" }, { en:"blue", zh:"藍色" }, { en:"big", zh:"大" }, { en:"small", zh:"小" },
-    { en:"open", zh:"打開" }, { en:"close", zh:"關上" }, { en:"touch", zh:"碰一下" }, { en:"look", zh:"看" },
+  // ✅ 初始篇章（移除預設篇，直接用你要的多篇）
+  // 注意：words 的 en 保留大小寫；progress/去重會用小寫 key
+  const INITIAL_SETS = [
+    {
+      name: "思考學習篇",
+      words: [
+        { en:"understand", zh:"理解" },
+        { en:"remember", zh:"記住" },
+        { en:"forget", zh:"忘記" },
+        { en:"practice", zh:"練習" },
+        { en:"review", zh:"複習" },
+        { en:"improve", zh:"改進" },
+        { en:"compare", zh:"比較" },
+        { en:"describe", zh:"描述" },
+        { en:"explain", zh:"解釋" },
+        { en:"solve", zh:"解決" },
+      ]
+    },
+    {
+      name: "情緒篇",
+      words: [
+        { en:"excited", zh:"興奮" },
+        { en:"happy", zh:"開心" },
+        { en:"sad", zh:"難過" },
+        { en:"angry", zh:"生氣" },
+        { en:"nervous", zh:"緊張" },
+        { en:"confident", zh:"有自信的" },
+        { en:"confused", zh:"困惑的" },
+        { en:"frustrated", zh:"挫折的" },
+        { en:"proud", zh:"驕傲的" },
+        { en:"curious", zh:"好奇的" },
+        { en:"worried", zh:"擔心的" },
+        { en:"scared", zh:"害怕的" },
+        { en:"afraid", zh:"害怕的" },
+        { en:"surprised", zh:"驚訝的" },
+        { en:"shocked", zh:"震驚的" },
+        { en:"relieved", zh:"如釋重負的" },
+        { en:"embarrassed", zh:"尷尬的" },
+        { en:"disappointed", zh:"失望的" },
+      ]
+    },
+    {
+      name: "時間連接詞篇",
+      words: [
+        { en:"before", zh:"在……之前" },
+        { en:"after", zh:"在……之後" },
+        { en:"during", zh:"在……期間" },
+        { en:"while", zh:"當……同時" },
+        { en:"when", zh:"當……時" },
+        { en:"whenever", zh:"每當" },
+        { en:"as soon as", zh:"一……就……" },
+        { en:"already", zh:"已經" },
+        { en:"still", zh:"仍然" },
+        { en:"yet", zh:"尚未" },
+        { en:"finally", zh:"最後" },
+        { en:"at first", zh:"一開始" },
+        { en:"then", zh:"然後" },
+        { en:"next", zh:"接著" },
+        { en:"later", zh:"之後" },
+        { en:"soon", zh:"很快" },
+        { en:"immediately", zh:"立刻" },
+        { en:"at the same time", zh:"同時" },
+      ]
+    },
+    {
+      name: "一般連結詞",
+      words: [
+        { en:"and", zh:"和" },
+        { en:"or", zh:"或" },
+        { en:"but", zh:"但是" },
+        { en:"so", zh:"所以" },
+        { en:"because", zh:"因為" },
+        { en:"although", zh:"雖然" },
+        { en:"however", zh:"然而" },
+        { en:"therefore", zh:"因此" },
+        { en:"also", zh:"也" },
+        { en:"too", zh:"也（句尾）" },
+        { en:"either", zh:"或者（兩者之一）" },
+        { en:"neither", zh:"兩者都不" },
+        { en:"instead", zh:"反而" },
+        { en:"otherwise", zh:"否則" },
+        { en:"for example", zh:"例如" },
+        { en:"in addition", zh:"此外" },
+      ]
+    },
+    {
+      name: "天氣篇",
+      words: [
+        { en:"sunny", zh:"晴朗的" },
+        { en:"rainy", zh:"下雨的" },
+        { en:"cloudy", zh:"多雲的" },
+        { en:"windy", zh:"有風的" },
+        { en:"snowy", zh:"下雪的" },
+        { en:"stormy", zh:"暴風雨的" },
+        { en:"foggy", zh:"起霧的" },
+        { en:"hot", zh:"炎熱的" },
+        { en:"warm", zh:"溫暖的" },
+        { en:"cool", zh:"涼爽的" },
+        { en:"cold", zh:"寒冷的" },
+        { en:"dry", zh:"乾燥的" },
+        { en:"wet", zh:"潮濕的" },
+        { en:"humid", zh:"濕熱的" },
+        { en:"rainbow", zh:"彩虹" },
+      ]
+    },
+    {
+      name: "月份篇",
+      words: [
+        { en:"January", zh:"一月" },
+        { en:"February", zh:"二月" },
+        { en:"March", zh:"三月" },
+        { en:"April", zh:"四月" },
+        { en:"May", zh:"五月" },
+        { en:"June", zh:"六月" },
+        { en:"July", zh:"七月" },
+        { en:"August", zh:"八月" },
+        { en:"September", zh:"九月" },
+        { en:"October", zh:"十月" },
+        { en:"November", zh:"十一月" },
+        { en:"December", zh:"十二月" },
+      ]
+    },
   ];
 
   function uid(){
     return "s_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16);
   }
 
+  // ✅ 統一 key：進度 / 去重 / 比對 都用小寫
+  function normEN(s){
+    return String(s ?? "").trim().toLowerCase();
+  }
+
   function sanitizeWords(arr){
     const cleaned = [];
     const seen = new Set();
+
     for(const x of arr || []){
       if(!x || !x.en || !x.zh) continue;
-      const en = String(x.en).trim().toLowerCase();
+
+      const enRaw = String(x.en).trim(); // ✅ 保留大小寫
       const zh = String(x.zh).trim();
-      if(!en || !zh) continue;
-      if(seen.has(en)) continue;
-      seen.add(en);
-      cleaned.push({ en, zh });
+      const enKey = normEN(enRaw);
+
+      if(!enRaw || !zh) continue;
+      if(seen.has(enKey)) continue;
+
+      seen.add(enKey);
+      cleaned.push({ en: enRaw, zh });
     }
     return cleaned;
+  }
+
+  function buildInitialData(){
+    const sets = {};
+    let firstId = null;
+
+    for(const s of INITIAL_SETS){
+      const id = uid();
+      if(!firstId) firstId = id;
+      sets[id] = {
+        name: String(s.name || "未命名篇"),
+        words: sanitizeWords(s.words || [])
+      };
+    }
+
+    return { activeSetId: firstId, sets };
   }
 
   function loadData(){
     try{
       const raw = localStorage.getItem(KEY_DATA);
       if(!raw){
-        const id = uid();
-        const data = {
-          activeSetId: id,
-          sets: {
-            [id]: { name: "預設篇", words: [...DEFAULT_WORDS] }
-          }
-        };
+        const data = buildInitialData();
         localStorage.setItem(KEY_DATA, JSON.stringify(data));
         return data;
       }
       const data = JSON.parse(raw);
       if(!data?.sets || !data.activeSetId || !data.sets[data.activeSetId]){
-        // repair
-        const id = uid();
-        const fixed = { activeSetId: id, sets: { [id]: { name:"預設篇", words:[...DEFAULT_WORDS] } } };
+        const fixed = buildInitialData();
         localStorage.setItem(KEY_DATA, JSON.stringify(fixed));
         return fixed;
       }
+
       // sanitize each set's words
       for(const sid of Object.keys(data.sets)){
         const s = data.sets[sid];
@@ -350,8 +482,7 @@
       localStorage.setItem(KEY_DATA, JSON.stringify(data));
       return data;
     } catch {
-      const id = uid();
-      const data = { activeSetId: id, sets: { [id]: { name:"預設篇", words:[...DEFAULT_WORDS] } } };
+      const data = buildInitialData();
       localStorage.setItem(KEY_DATA, JSON.stringify(data));
       return data;
     }
@@ -496,13 +627,14 @@
     progressAll[sid] = progressAll[sid] || {};
     const map = progressAll[sid];
 
-    // add missing words
+    // add missing words (key = lowercase)
     for(const w of getActiveWords()){
-      if(typeof map[w.en] !== "number") map[w.en] = 0;
+      const k = normEN(w.en);
+      if(typeof map[k] !== "number") map[k] = 0;
     }
     // remove deleted words
-    for(const en of Object.keys(map)){
-      if(!getActiveWords().find(w => w.en === en)) delete map[en];
+    for(const k of Object.keys(map)){
+      if(!getActiveWords().find(w => normEN(w.en) === k)) delete map[k];
     }
     saveProgress(progressAll);
   }
@@ -512,10 +644,8 @@
     data.activeSetId = sid;
     saveData(data);
     ensureProgressForActiveSet();
-    // reset review index to safe range
     state.reviewIndex = 0;
     saveState(state);
-    // refresh UI views
     fillSetSelect();
     renderWordList();
     renderTeacherBulk();
@@ -525,7 +655,6 @@
   function fillSetSelect(){
     setSelect.innerHTML = "";
     const entries = Object.entries(data.sets);
-    // stable ordering: active first then name
     entries.sort((a,b) => {
       const [ida,sa] = a; const [idb,sb] = b;
       if(ida === data.activeSetId) return -1;
@@ -557,19 +686,21 @@
   // =================== Mastery UI ===================
   function getStreak(en){
     const sid = data.activeSetId;
-    return progressAll?.[sid]?.[en] ?? 0;
+    const k = normEN(en);
+    return progressAll?.[sid]?.[k] ?? 0;
   }
   function setStreak(en, val){
     const sid = data.activeSetId;
+    const k = normEN(en);
     progressAll[sid] = progressAll[sid] || {};
-    progressAll[sid][en] = clamp(val, 0, 5);
+    progressAll[sid][k] = clamp(val, 0, 5);
     saveProgress(progressAll);
   }
   function updateMasteryUI(){
     const words = getActiveWords();
     const sid = data.activeSetId;
     const map = progressAll[sid] || {};
-    const mastered = words.filter(w => (map[w.en] ?? 0) >= 5).length;
+    const mastered = words.filter(w => (map[normEN(w.en)] ?? 0) >= 5).length;
     masteredCount.textContent = mastered;
     totalCount.textContent = words.length;
     const pct = words.length ? Math.round((mastered/words.length)*100) : 0;
@@ -666,7 +797,7 @@
 
   // =================== Play logic: interleaving picker ===================
   let currentWord = null;
-  let lastEn = null;
+  let lastKey = null;
 
   function unfinishedWords(){
     const words = getActiveWords();
@@ -677,10 +808,9 @@
     const pool = unfinishedWords();
     if(!pool.length) return null;
 
-    const candidates = pool.filter(w => w.en !== lastEn);
+    const candidates = pool.filter(w => normEN(w.en) !== lastKey);
     const usePool = candidates.length ? candidates : pool;
 
-    // weight: (5 - streak)^2 + 1  => streak小更常出
     const weights = usePool.map(w => {
       const s = getStreak(w.en);
       const base = (5 - s);
@@ -806,7 +936,9 @@
     hideMsg();
 
     speakEN(w.en);
-    spellTarget = w.en.toLowerCase();
+
+    // ✅ 拼字：用小寫當目標（不然 January 會需要拼大寫 J）
+    spellTarget = normEN(w.en);
     spellBuilt = "";
 
     const letters = spellTarget.split("");
@@ -852,7 +984,7 @@
     renderSlots();
   });
   btnSubmitSpell.addEventListener("click", () => {
-    const isCorrect = (spellBuilt.toLowerCase() === spellTarget);
+    const isCorrect = (normEN(spellBuilt) === spellTarget);
     if(isCorrect){
       showMsg("✅ 拼對了！", "good");
     } else {
@@ -864,16 +996,16 @@
   // =================== Answer handling: per-word consecutive correct ===================
   function handleAnswer(isCorrect, delay=false){
     if(!currentWord) return;
-    const en = currentWord.en;
-    const s = getStreak(en);
+    const shownEn = currentWord.en;     // ✅ 顯示用（保留大小寫）
+    const s = getStreak(shownEn);       // ✅ 內部用 norm key
 
     if(isCorrect){
-      setStreak(en, s + 1);
-      const ns = getStreak(en);
-      showMsg(`✅ 過關！「${en}」連勝：${ns}/5`, "good");
+      setStreak(shownEn, s + 1);
+      const ns = getStreak(shownEn);
+      showMsg(`✅ 過關！「${shownEn}」連勝：${ns}/5`, "good");
     } else {
-      setStreak(en, 0);
-      showMsg(`🛡️ 卡關：沒關係！「${en}」連勝歸零，之後會交叉再出現直到連勝 5 次`, "warn");
+      setStreak(shownEn, 0);
+      showMsg(`🛡️ 卡關：沒關係！「${shownEn}」連勝歸零，之後會交叉再出現直到連勝 5 次`, "warn");
     }
 
     updateMasteryUI();
@@ -903,7 +1035,7 @@
       choicesEl.innerHTML = "";
       return;
     }
-    if(resetLast) lastEn = null;
+    if(resetLast) lastKey = null;
 
     currentWord = pickNextWord();
     if(!currentWord){
@@ -911,7 +1043,7 @@
       promptText.textContent = "🎉 本篇完成！";
       return;
     }
-    lastEn = currentWord.en;
+    lastKey = normEN(currentWord.en);
 
     const mode = getActiveMode();
     if(mode === "listen_spell"){
@@ -948,7 +1080,6 @@
         set.words = sanitizeWords(set.words);
         saveData(data);
 
-        // progress cleanup
         ensureProgressForActiveSet();
 
         renderWordList();
@@ -995,7 +1126,7 @@
     data.sets[id] = { name: name.trim(), words: sanitizeWords(cur.words) };
     saveData(data);
 
-    // copy progress as 0 (更直覺：新篇章重新挑戰)
+    // 新篇章進度歸零
     progressAll[id] = {};
     saveProgress(progressAll);
 
@@ -1018,7 +1149,6 @@
     saveData(data);
     saveProgress(progressAll);
 
-    // switch to first remaining set
     const nextId = Object.keys(data.sets)[0];
     data.activeSetId = nextId;
     saveData(data);
@@ -1056,14 +1186,14 @@
 
     const arr = [];
     for(let i=0;i<n;i++){
-      arr.push({ en: ens[i].toLowerCase(), zh: zhs[i] });
+      // ✅ 不再強制小寫，保留你輸入的大小寫
+      arr.push({ en: ens[i], zh: zhs[i] });
     }
 
     const cleaned = sanitizeWords(arr);
     getActiveSet().words = cleaned;
     saveData(data);
 
-    // reset progress for this set to avoid mismatch
     progressAll[data.activeSetId] = {};
     saveProgress(progressAll);
     ensureProgressForActiveSet();
@@ -1079,25 +1209,29 @@
     alert("已套用本篇單字庫，並重置本篇闖關進度。");
   });
 
+  // ✅ 這裡改成「恢復初始篇章（覆蓋全部）」
   resetDefault.addEventListener("click", () => {
-    const ok = confirm("要用「預設單字」覆蓋本篇嗎？（本篇原本單字會被取代，進度重置）");
+    const ok = confirm("要恢復成「初始篇章（你設定的那些篇）」嗎？（會覆蓋全部篇章，進度也會重置）");
     if(!ok) return;
 
-    getActiveSet().words = sanitizeWords(DEFAULT_WORDS);
-    saveData(data);
+    const fresh = buildInitialData();
+    localStorage.setItem(KEY_DATA, JSON.stringify(fresh));
+    localStorage.setItem(KEY_PROGRESS, JSON.stringify({}));
 
-    progressAll[data.activeSetId] = {};
-    saveProgress(progressAll);
+    data = loadData();
+    progressAll = loadProgress();
     ensureProgressForActiveSet();
 
     state.reviewIndex = 0;
     saveState(state);
     reviewSide = "EN";
 
+    fillSetSelect();
     renderTeacherBulk();
     renderWordList();
-    renderReview();
+    setPhase(state.phase || "review");
     updateMasteryUI();
+    alert("已恢復初始篇章。");
   });
 
   exportAll.addEventListener("click", () => {
@@ -1115,19 +1249,33 @@
     try{
       const payload = JSON.parse(ioBox.value);
       if(!payload?.data?.sets || !payload?.data?.activeSetId) throw new Error("bad");
-      // sanitize sets
+
       const sets = payload.data.sets;
       for(const sid of Object.keys(sets)){
         sets[sid].name = String(sets[sid].name || "未命名篇");
         sets[sid].words = sanitizeWords(sets[sid].words);
+
+        // ✅ 匯入進度：如果對方進度 key 是原大小寫，這裡也一起 normalize
+        // 讓相容性更強（你貼的本來是小寫，所以也 OK）
       }
-      // ensure active exists
+
       if(!sets[payload.data.activeSetId]){
         payload.data.activeSetId = Object.keys(sets)[0];
       }
 
+      // normalize progress keys
+      const prog = payload.progress && typeof payload.progress === "object" ? payload.progress : {};
+      for(const sid of Object.keys(prog)){
+        const oldMap = prog[sid] || {};
+        const newMap = {};
+        for(const k of Object.keys(oldMap)){
+          newMap[normEN(k)] = clamp(Number(oldMap[k] ?? 0), 0, 5);
+        }
+        prog[sid] = newMap;
+      }
+
       localStorage.setItem(KEY_DATA, JSON.stringify(payload.data));
-      localStorage.setItem(KEY_PROGRESS, JSON.stringify(payload.progress || {}));
+      localStorage.setItem(KEY_PROGRESS, JSON.stringify(prog));
 
       data = loadData();
       progressAll = loadProgress();
@@ -1137,6 +1285,7 @@
       renderTeacherBulk();
       renderWordList();
       setPhase(state.phase || "review");
+      updateMasteryUI();
       alert("匯入成功！已載入全部篇章與進度。");
     } catch {
       alert("匯入失敗：請確認貼上的是「匯出全部篇章」產生的 JSON。");
@@ -1154,17 +1303,14 @@
   ensureProgressForActiveSet();
   updateMasteryUI();
 
-  // restore phase
   if(state.phase === "play"){
     setPhase("play");
   } else {
     setPhase("review");
   }
 
-  // keep mode
   modeSelect.value = state.mode || "mixed";
 
-  // Ensure teacher UI reflects
   renderTeacherBulk();
   renderWordList();
 })();
